@@ -1,0 +1,9 @@
+
+.vscode/
+
+build/
+build_meson/
+build_cmake/
+
+*.s
+*.ll
