@@ -24,28 +24,62 @@ if(ENABLE_ASAN AND ENABLE_TSAN)
   message(FATAL_ERROR "Sanitizers are currently mutually exclusive. Only use one at a time: -ENABLE_ASAN=ON")
 endif()
 
-if(ENABLE_ASAN)
-  set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS}
-      "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer")
-  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}
-      "-fsanitize=address -fno-optimize-sibling-calls -fsanitize-address-use-after-scope -fno-omit-frame-pointer")
-
-elseif(ENABLE_TSAN)
-  set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-fsanitize=thread")
-  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fsanitize=thread")
-
-elseif(ENABLE_UBSAN)
-  # Important -fno-sanitize-recover=all to error out
-  set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-fsanitize=undefined -fno-sanitize-recover=all")
-  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fsanitize=undefined -fno-sanitize-recover=all")
-
-elseif(ENABLE_MSAN)
-  if (CMAKE_CXX_COMPILER_ID NOT STREQUAL "Clang")
-    message(FATAL_ERROR "-ENABLE_MSAN=ON is only supported by Clang compilers. Use CC=clang cmake -DENABLE_MSAN=ON ..")
-  endif()
-  set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-fsanitize=memory -fno-omit-frame-pointer")
-  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fsanitize=memory -fno-omit-frame-pointer")
+if(${ENABLE_MSAN}) 
+	#if(NOT COMPILERS MATCHES "clang")
+	if(NOT "${CMAKE_C_COMPILER};${CMAKE_CXX_COMPILER}" MATCHES "clang")
+		message(
+			FATAL_ERROR 
+			"-ENABLE_MSAN=ON is only supported by Clang compilers. Use CC=clang cmake -DENABLE_MSAN=ON .."
+		)
+	endif()
 endif()
+
+set(ASAN_FLAGS
+	"-fsanitize=address"
+	"-fno-optimize-sibling-calls"
+	"-fsanitize-address-use-after-scope"
+	"-fno-omit-frame-pointer"
+	CACHE
+	STRING
+	"Compiler flags for adding address sanitizers"
+)
+
+set(TSAN_FLAGS 
+	-fsanitize=thread 
+	CACHE 
+	STRING 
+	"Compiler flags for adding thread sanitizers"
+)
+
+set(UBSAN_FLAGS 
+	-fsanitize=undefined 
+	-fno-sanitize-recover=all
+	CACHE 
+	STRING 
+	"Compiler flags for undefined behavior sanitizers"
+)
+
+set(MSAN_FLAGS 
+	-fsanitize=memory
+	-fno-omit-frame-pointer
+	CACHE 
+	STRING 
+	"Compiler flags for memory sanitizers"
+)
+
+add_compile_options(
+	"$<$<BOOL:${ENABLE_ASAN}>:${ASAN_FLAGS}>"
+	"$<$<BOOL:${ENABLE_TSAN}>:${TSAN_FLAGS}>"
+	"$<$<BOOL:${ENABLE_UBSAN}>:${UBSAN_FLAGS}>"
+	"$<$<BOOL:${ENABLE_MSAN}>:${MSAN_FLAGS}>"
+)
+add_link_options(
+	"$<$<BOOL:${ENABLE_ASAN}>:${ASAN_FLAGS}>"
+	"$<$<BOOL:${ENABLE_TSAN}>:${TSAN_FLAGS}>"
+	"$<$<BOOL:${ENABLE_UBSAN}>:${UBSAN_FLAGS}>"
+	"$<$<BOOL:${ENABLE_MSAN}>:${MSAN_FLAGS}>"
+)
 
 enable_testing()
 add_subdirectory(tests)
+
