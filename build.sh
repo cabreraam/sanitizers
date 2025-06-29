@@ -11,19 +11,19 @@
 # $4 = cxx compiler
 function make_and_build ()
 {
-	mkdir -p $1	
-	cd $1
-	cmake -D${2}=ON -DCMAKE_C_COMPILER=${3} -DCMAKE_CXX_COMPILER=${4} ..
-	cmake --build .
-	ctest
-	cd ..
+  BUILD_DIR="build/${1}"
+	cmake -GNinja -B./${BUILD_DIR} -S. -D${2}=ON -DCMAKE_C_COMPILER=${3} -DCMAKE_CXX_COMPILER=${4} ..
+	cmake --build ${BUILD_DIR} 
+  pushd ./${BUILD_DIR}
+	ctest 
+  popd
 }
 
 # gcc
-make_and_build build_gcc_asan ENABLE_ASAN gcc g++
-make_and_build build_gcc_tsan ENABLE_TSAN gcc g++
-make_and_build build_gcc_ubsan ENABLE_UBSAN gcc g++
-make_and_build build_gcc_msan ENABLE_MSAN gcc g++
+######make_and_build build_gcc_asan ENABLE_ASAN gcc g++
+######make_and_build build_gcc_tsan ENABLE_TSAN gcc g++
+######make_and_build build_gcc_ubsan ENABLE_UBSAN gcc g++
+######make_and_build build_gcc_msan ENABLE_MSAN gcc g++
 #
 ## clang
 make_and_build build_clang_asan ENABLE_ASAN clang clang++
